@@ -1,0 +1,81 @@
+---
+title: "Exercise 1"
+author: "Carilli"
+date: '`r format(Sys.Date(), "%Y-%B-%d")`'
+output: 
+  html_document:
+    theme: cerulean
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, comment = NA, warning = FALSE, message = FALSE,
+                      options(digits = 3, scipen = 999))
+require(tidyverse)
+require(readr)
+require(janitor)
+require(broom)
+require(magrittr)
+require(kableExtra)
+```
+
+```{r data}
+height_wage <- read_csv("HeightWage_MenWomenUS_HW.csv")
+```
+
+### (a)
+
+```{r part_a}
+height_wage %>%
+  drop_na() %>% 
+  ggplot(aes(x = height85, y = wage96)) +
+  geom_point() +
+  labs(y = "Hourly wages (in dollars) in 1996",
+       x = "Adult height: height (in inches) measured in 1985") 
+```
+
+### (b)
+
+```{r part_b}
+height_wage %>%
+  drop_na() %$% 
+  lm(wage96 ~ height85) %>% 
+  tidy() %>% 
+  kable() %>% 
+  kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+```
+
+### (c)
+
+```{r part_C}
+t_calc <- 
+height_wage %>%
+  drop_na() %$% 
+  lm(wage96 ~ height85) %>% 
+  tidy()  %>%
+  filter(term == "height85") %>%
+  pull(statistic)
+
+df <- 
+  height_wage %>%
+  drop_na() %$% 
+  lm(wage96 ~ height85) %>% 
+  glance() %>% 
+  pull(df.residual)
+
+# t_crit <- qt(.975, df)
+
+# ifelse(t_calc > t_crit, "Reject null hypothesis", "Fail to reject")
+```
+
+We wish to test
+
+$$\begin{align}
+H_0&:\beta_1=0\\
+H_1&:\beta_1\ne0
+\end{align}$$
+
+
+The critical value of $t_{`r df`}^.05 = `r qt(.975, df)`$. The calculated $t$ from the regression is $`r t_calc`$ which is greater than $`r qt(.975, df)`$, therfore we `r ifelse(t_calc > qt(.975, df), "can reject the null hypothesis.", "fail to reject the null hypothesis")` and conclude that there is evidence to believe that $\beta_1$ is not zero.
+
+

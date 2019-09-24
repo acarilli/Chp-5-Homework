@@ -1,0 +1,64 @@
+---
+title: "Exercise 3"
+author: "Carilli"
+date: '`r format(Sys.Date(), "%Y-%B-%d")`'
+output: 
+  html_document:
+    theme: cerulean
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, comment = NA, warning = FALSE, message = FALSE,
+                      options(digits = 3, scipen = 999))
+require(tidyverse)
+require(readr)
+require(janitor)
+require(broom)
+require(magrittr)
+require(kableExtra)
+require(xtable)
+require(sjPlot)
+require(sjmisc)
+require(sjlabelled)
+require(car)
+require(moderndive)
+```
+
+```{r data}
+cell <- read_csv("Cellphone_2012_homework.csv")
+```
+
+### (a)
+
+```{r part_a}
+cell %$% 
+  lm(numberofdeaths ~ cell_subscription) %>% 
+  get_regression_table()
+```
+
+### (b)
+
+```{r part_b}
+cell %$% 
+  lm(numberofdeaths ~ cell_subscription + population) %>% 
+  get_regression_table()
+```
+
+
+### (c)
+
+```{r part_c}
+cell %$% 
+  lm(numberofdeaths ~ cell_subscription + population + total_miles_driven) %>% 
+  get_regression_table()
+```
+
+### (d)
+
+```{r part_d}
+cell %$% 
+  lm(numberofdeaths ~ cell_subscription + population + total_miles_driven) %>% 
+  vif()
+```
+

@@ -1,0 +1,87 @@
+---
+title: "Exercise 2"
+author: "Carilli"
+date: '`r format(Sys.Date(), "%Y-%B-%d")`'
+output: 
+  html_document:
+    theme: cerulean
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, comment = NA, warning = FALSE, message = FALSE,
+                      options(digits = 3, scipen = 999))
+require(tidyverse)
+require(readr)
+require(janitor)
+require(broom)
+require(magrittr)
+require(kableExtra)
+require(xtable)
+require(sjPlot)
+require(sjmisc)
+require(sjlabelled)
+require(car)
+require(moderndive)
+require(lm.beta)
+require(psycho)
+```
+
+```{r data}
+mlb <- read_csv("MLBattend.csv") %>% 
+  janitor::clean_names("snake")
+```
+
+### (a)
+
+```{r part_a}
+mlb %$% 
+  lm(home_attend ~ wins + runs_scored + runs_allowed) %>% 
+  get_regression_table() #c%>% 
+  # tab_model(show.se = TRUE, show.ci = FALSE, show.stat = TRUE)
+```
+
+### (b)
+
+
+### (c)
+
+```{r part_c}
+mlb %$% 
+  lm(home_attend ~ wins + runs_scored + runs_allowed + season) %>% 
+  get_regression_table() 
+```
+
+### (d)
+
+```{r part_d}
+mlb %>% 
+  ggplot(aes(x = season, y = runs_scored)) + 
+  geom_jitter(width = 0, height = .4, alpha = .3) + 
+  xlab("Season") +
+  ylab("Runs Scored") +
+  geom_smooth(method = "lm", se = FALSE)
+
+mlb %$% 
+  lm(runs_scored ~ season) %>% 
+  get_regression_table()
+```
+
+
+### (e)
+
+```{r part_e}
+mlb %$% 
+  lm(home_attend ~ wins + runs_scored + runs_allowed + season) %>% 
+  lm.beta() 
+
+ols_e <- 
+lm(home_attend ~ wins + runs_scored + runs_allowed + season, data = mlb) 
+
+class(ols_e)
+
+psycho::standardize(ols_e)
+```
+
+
+

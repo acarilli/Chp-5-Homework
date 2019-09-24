@@ -1,0 +1,80 @@
+---
+title: "Exercise 5"
+author: "Carilli"
+date: '`r format(Sys.Date(), "%Y-%B-%d")`'
+output: 
+  html_document:
+    theme: cerulean
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, comment = NA, warning = FALSE, message = FALSE,
+                      options(digits = 3, scipen = 999))
+require(tidyverse)
+require(readr)
+require(janitor)
+require(broom)
+require(magrittr)
+require(kableExtra)
+require(car)
+require(moderndive)
+```
+
+```{r data}
+height_wages <- read_csv("heightwage_british_males_multivariate.csv") %>% 
+  clean_names()
+```
+
+### (a)
+
+```{r part_a}
+height_wages %$% 
+  lm(gwage33 ~ height33 + height16) %>% 
+  get_regression_table()
+```
+
+### (b)
+
+```{r part_b}
+height_wages %$% 
+  lm(gwage33 ~ height33 + height16 + height07) %>% 
+  get_regression_table()
+```
+
+### (c)
+
+```{r part_c}
+height_wages %$% 
+  lm(gwage33 ~ height33 + height16 + height07) %>% 
+  vif()
+```
+
+### (d)
+
+```{r part_d}
+height_wages %$% 
+  lm(gwage33 ~ height16 + momed + daded) %>% 
+  get_regression_table()
+
+height_wages %$% 
+  lm(gwage33 ~ height33 + height16 + height07 + momed + daded) %>% 
+  tidy()
+```
+
+### (e)
+
+```{r part_e}
+height_wages %$% 
+  lm(gwage33 ~ height16 + momed + daded + siblings) %>% 
+  get_regression_table()
+```
+
+### (f)
+
+```{r part_f}
+height_wages %$% 
+  lm(gwage33 ~ ht16noisy + momed + daded + siblings) %>% 
+  get_regression_table()
+```
+
