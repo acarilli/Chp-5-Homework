@@ -1,7 +1,7 @@
 ---
 title: "Exercise 2"
 author: "Carilli"
-date: '`r format(Sys.Date(), "%Y-%B-%d")`'
+date: '`r format(lubridate::today(), "%B %d, %Y")`'
 output: 
   html_document:
     theme: cerulean
@@ -11,50 +11,48 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, comment = NA, warning = FALSE, message = FALSE,
                       options(digits = 3, scipen = 999))
-require(tidyverse)
-require(readr)
-require(janitor)
-require(broom)
-require(magrittr)
-require(kableExtra)
-require(xtable)
-require(sjPlot)
-require(sjmisc)
-require(sjlabelled)
-require(car)
-require(moderndive)
-require(lm.beta)
-require(psycho)
+library(tidyverse)
 ```
 
-```{r data}
-mlb <- read_csv("MLBattend.csv") %>% 
-  janitor::clean_names("snake")
+```{r 2data}
+mlb <- 
+here::here("data", "MLBattend.csv") %>% 
+  read_csv() %>% 
+  janitor::clean_names()
+
 ```
 
 ### (a)
 
-```{r part_a}
-mlb %$% 
-  lm(home_attend ~ wins + runs_scored + runs_allowed) %>% 
-  get_regression_table() #c%>% 
-  # tab_model(show.se = TRUE, show.ci = FALSE, show.stat = TRUE)
+```{r 2a}
+mlb %>% 
+  lm(home_attend ~ wins + runs_scored + runs_allowed, .) %>% 
+  summary()
 ```
 
 ### (b)
 
+The two conditions are (i) season must affect attendance and (ii) season must be correlated with the independent variables in part (a). Condition (i) is likely true because it makes sense that overall attendance has been rising with population. Condition (ii) is hard to assess, but would hold if it is the case that there are more runs scored over time, for example.
 
 ### (c)
 
-```{r part_c}
-mlb %$% 
-  lm(home_attend ~ wins + runs_scored + runs_allowed + season) %>% 
-  get_regression_table() 
+```{r 2c}
+mlb %>% 
+  lm(home_attend ~ wins + runs_scored + runs_allowed + season, .) %>% 
+  summary()
+
+jtools::export_summs(
+  mlb %>% 
+  lm(home_attend ~ wins + runs_scored + runs_allowed, .),
+  
+  mlb %>% 
+  lm(home_attend ~ wins + runs_scored + runs_allowed + season, .)
+)
 ```
 
 ### (d)
 
-```{r part_d}
+```{r 2d}
 mlb %>% 
   ggplot(aes(x = season, y = runs_scored)) + 
   geom_jitter(width = 0, height = .4, alpha = .3) + 
@@ -64,23 +62,26 @@ mlb %>%
 
 mlb %$% 
   lm(runs_scored ~ season) %>% 
-  get_regression_table()
+  summary()
 ```
 
 
 ### (e)
 
-```{r part_e}
-mlb %$% 
-  lm(home_attend ~ wins + runs_scored + runs_allowed + season) %>% 
-  lm.beta() 
+```{r 2e}
+mlb %>% 
+  mutate(across(where(is.numeric), scale)) %>% 
+  lm(home_attend ~ wins + runs_scored + runs_allowed + season, .) %>% 
+  summary()
 
-ols_e <- 
-lm(home_attend ~ wins + runs_scored + runs_allowed + season, data = mlb) 
+mlb %>% 
+  mutate(across(where(is.numeric), scale)) %>% 
+  lm(home_attend ~ wins + runs_scored + runs_allowed + season, .) %>% 
+  jtools::summ(scale = TRUE, transform.response = TRUE)
 
-class(ols_e)
-
-psycho::standardize(ols_e)
+mlb %>% 
+  lm(home_attend ~ wins + runs_scored + runs_allowed + season, .) %>% 
+  lm.beta::lm.beta() 
 ```
 
 

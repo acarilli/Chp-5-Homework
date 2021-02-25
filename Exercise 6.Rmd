@@ -6,41 +6,41 @@ output:
   html_document:
     theme: cerulean
     highlight: tango
+    code_folding: hide
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, comment = NA, warning = FALSE, message = FALSE,
                       options(digits = 3, scipen = 999))
-require(tidyverse)
-require(readr)
-require(janitor)
-require(broom)
-require(magrittr)
-require(kableExtra)
-require(car)
-require(moderndive)
-library(lm.beta)
-library(psycho)
+library(tidyverse)
 ```
 
-```{r data}
-globaled <- read_csv("globaled.csv") %>% 
-  clean_names()
+```{r 6data}
+globaled <- 
+  here::here("data", "globaled.csv") %>% 
+  read_csv() %>% 
+  janitor::clean_names()
 ```
 
 ### (a)
 
-```{r part_a}
-globaled %$% 
-  lm(ypcgr ~ testavg + edavg + ypc60) %>% 
-  tidy()
+```{r 6a}
+globaled %>% 
+  lm(ypcgr ~ testavg + edavg + ypc60, .) %>% 
+  jtools::summ()
 
-globaled %$% 
-  lm(ypcgr ~ testavg + edavg + ypc60) %>%   
-  lm.beta()
+globaled %>% 
+  lm(ypcgr ~ testavg + edavg + ypc60, .) %>%   
+  lm.beta::lm.beta()
 
-lm(ypcgr ~ testavg + edavg + ypc60, globaled) %>% 
-  psycho::standardize()
+globaled %>% 
+  lm(ypcgr ~ testavg + edavg + ypc60, .) %>% 
+  jtools::summ(scale = TRUE, transform.response = TRUE)
+
+globaled %>% 
+  mutate(across(where(is.numeric), scale)) %>% 
+  lm(ypcgr ~ testavg + edavg + ypc60 -1, .) %>%
+  jtools::summ()
 ```
 
 ### (b)
@@ -62,51 +62,38 @@ $$\text{R:}\hspace{1cm}ypcgr=\beta_0+\beta_1(testavg + edavg)+\beta_3ypc60+\nu$$
 
 There are three ways we can test this hypothesis. 
 
-1. Direct t-test where 
+(@) Direct t-test where 
 
 $$t\sim \frac{\left(\hat{\beta_1}-\hat{\beta_2}\right) - \left(\beta_1-\beta_2 \right) }{se_{\left(\hat{\beta_1}-\hat{\beta_2} \right)}}$$
 where $$se_{\left(\hat{\beta_1}-\hat{\beta_2} \right)}=\sqrt{\text{Var}\left(\hat{\beta_1}\right) + \text{Var}\left(\hat{\beta_2}\right) - 2\times\text{Cov}\left(\hat{\beta_1},\hat{\beta_2}\right)}$$
 
-```{r part_b_1}
-# standardize the data (pyscho package) and estimate the equation
+```{r 6b_1}
 ols_s <- 
 globaled %>% 
-  mutate(ypcgr_s = standardize(ypcgr),
-         testavg_s = standardize(testavg),
-         edavg_s = standardize(edavg),
-         ypc60_s = standardize(ypc60)) %$%
-  lm(ypcgr_s ~ testavg_s + edavg_s + ypc60_s - 1)
-
-ols_s %>% 
-  tidy()
+  mutate(across(where(is.numeric), scale)) %>% 
+  lm(ypcgr ~ testavg + edavg + ypc60 -1, .) 
 
 #retrieve the coefficients
 
-beta <- 
-ols_s %>% 
-  tidy() %>% 
-  pull(estimate)  
+beta <- ols_s$coefficients
 
 #generate the Var-Cov matrix 
 
 var_cov <- vcov(ols_s)
 
-df <- 
-  ols_s %>% 
-  glance() %>% 
-    pull(df.residual)
+df <- ols_s$df.residual 
 
 (t <- (beta[1] - beta[2]) / sqrt(var_cov[1,1] + var_cov[2,2] - 2 * var_cov[1,2]))
 
 qt(.975, df)
 
-(1 - pt(t, df, lower.tail = TRUE))*2
+(1 - pt(t, df))*2
 
 ```
 
-2. Indirect t-test
+(@) Indirect t-test
 
-Define a new parameter $\delta$ which takes on the value 0 under the null hypothesis. In this case $\delta=\beta_1-\beta_2$. Substitute into the unrestricted equation as $\beta_2=\delta-\beta_1$, estimate 
+Define a new parameter $\delta$ which takes on the value 0 under the null hypothesis. In this case $\delta=\beta_1-\beta_2$. Substitute into the unrestricted equation as $\beta_2=\beta_1 - \delta$, estimate 
 
 $$\begin{aligned}ypcgr&=\beta_0+\beta_1testavg + \left(\beta_1-\delta \right)edavg + \beta_3ypc60+\mu\\
 &= \beta_0+\beta_1testavg + \beta_1 edavg - \delta edavg + \beta_3ypc60+\mu\\
@@ -114,45 +101,39 @@ $$\begin{aligned}ypcgr&=\beta_0+\beta_1testavg + \left(\beta_1-\delta \right)eda
 \end{aligned}$$
 
 and test $$H_0:\delta=0 \\ H_1:\delta\ne0$$
-```{r part_b_2}
-ols_idt <- 
-  globaled %>% 
-  mutate(ypcgr_s = standardize(ypcgr),
-         testavg_s = standardize(testavg),
-         edavg_s = standardize(edavg),
-         ypc60_s = standardize(ypc60)) %$%
-  lm(ypcgr_s ~ I(testavg_s + edavg_s) + edavg_s + ypc60_s - 1)
 
-ols_idt %>% 
-  tidy()
+```{r 6b_2}
+globaled %>% 
+  mutate(across(where(is.numeric), scale)) %$%
+  lm(ypcgr ~ I(testavg + edavg) + edavg + ypc60 -1, .) %>% 
+  jtools::summ()
 ```
 
-
-3. F-test (Wald test)
+(@) F-test (Wald test)
 
 Where $$F \sim \frac{\frac{ess_R-ess_{UR}}{1}} {\frac{ess_{UR}}{n-k-1}}$$
 
-```{r part_b_3}
+```{r 6b_3}
 ols_r <- 
 globaled %>% 
-  mutate(ypcgr_s = standardize(ypcgr),
-         testavg_s = standardize(testavg),
-         edavg_s = standardize(edavg),
-         ypc60_s = standardize(ypc60)) %$%
-  lm(ypcgr_s ~ I(testavg_s + edavg_s) + ypc60_s - 1)
+  mutate(across(where(is.numeric), scale)) %>%
+  lm(ypcgr ~ I(testavg + edavg) + ypc60 -1, .) %>% 
+  jtools::summ()
+
+ols_u <- 
+  globaled %>% 
+  mutate(across(where(is.numeric), scale)) %>%
+  lm(ypcgr ~ testavg + edavg + ypc60 -1, .) %>% 
+  jtools::summ()
 
 ess_r <- 
-  ols_r %>% 
-  augment() %>% 
-  summarize(ess = sum(.resid^2)) %>% 
-  pull(ess)
-
+  ols_r$residuals^2 %>% 
+  sum()
+ 
 ess_u <- 
-  ols_s %>% 
-    augment() %>% 
-    summarize(ess = sum(.resid^2)) %>% 
-    pull(ess)
-
+  ols_u$residuals^2 %>% 
+  sum()
+   
 (f_c <- (ess_r-ess_u)/(ess_u/df))
 
 qf(.95, 1, df, lower.tail = TRUE)
@@ -163,39 +144,29 @@ pf(f_c, 1, df, lower.tail = FALSE)
 
 We can perform this test by estimating each model and comparing the appropriate sum of squares or would could perform the test with `linearHhypothesis` from the `car` package as described in the companion.
 
-```{r part_b}
+```{r 6b_4}
 ols_s %>% 
-  linearHypothesis("testavg_s = edavg_s")
+  car::linearHypothesis("testavg = edavg")
 ```
 
 Note the p-values are the same an each case, the calculated t-stats are the same in parts 1 and 2.  Finally, note that the calculate F is the square of the calculate t. This is always the case when there is one degree of freedom in the numerator of an F-test.
 
 ### (c)
 
-```{r part_c_i}
+```{r 6c_i}
 # we can also use scale from the base package to standardize the variables
 globaled %>% 
-  mutate(ypcgr_s = scale(ypcgr),
-         testavg_s = scale(testavg),
-         edavg_s = scale(edavg),
-         ypc60_s = scale(ypc60),
-         proprts_s = scale(proprts),
-         open_s = scale(open)) %$%  
-  lm(ypcgr_s ~ testavg_s + edavg_s + ypc60_s + proprts_s + open_s - 1) %>% 
-  tidy()
+  mutate(across(where(is.numeric), scale)) %>%   
+  lm(ypcgr ~ testavg + edavg + ypc60 + proprts + open - 1, .) %>% 
+  jtools::summ()
 
 ```
 
-```{r}
+```{r 6c_ii}
 globaled %>% 
-  mutate(ypcgr_s = scale(ypcgr),
-         testavg_s = scale(testavg),
-         edavg_s = scale(edavg),
-         ypc60_s = scale(ypc60),
-         proprts_s = scale(proprts),
-         open_s = scale(open)) %$%  
-  lm(ypcgr_s ~ testavg_s + edavg_s + ypc60_s + proprts_s + open_s - 1) %>% 
-  linearHypothesis("testavg_s = proprts_s")
+  mutate(across(where(is.numeric), scale)) %>% 
+  lm(ypcgr ~ testavg + edavg + ypc60 + proprts + open - 1, .) %>% 
+  car::linearHypothesis("testavg = proprts")
 ```
 
 

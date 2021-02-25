@@ -11,70 +11,73 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, comment = NA, warning = FALSE, message = FALSE,
                       options(digits = 3, scipen = 999))
-require(tidyverse)
-require(readr)
-require(janitor)
-require(broom)
-require(magrittr)
-require(kableExtra)
-require(car)
-require(moderndive)
+library(tidyverse)
 ```
 
-```{r data}
-height_wages <- read_csv("heightwage_british_males_multivariate.csv") %>% 
-  clean_names()
+```{r 5data}
+height_wages <- 
+  here::here("data", "heightwage_british_males_multivariate.csv") %>% 
+  read_csv() %>% 
+  janitor::clean_names() %>% 
+  rename(height_07 = height07, height_16 = height16, height_33 = height33,
+         gwage_33 = gwage33, mom_ed = momed, dad_ed = daded, 
+         ht_16_noisy = ht16noisy)
 ```
 
 ### (a)
 
-```{r part_a}
-height_wages %$% 
-  lm(gwage33 ~ height33 + height16) %>% 
-  get_regression_table()
+```{r 5a}
+height_wages %>% 
+  lm(gwage_33 ~ height_33 + height_16, .) %>% 
+  jtools::summ()
 ```
 
 ### (b)
 
-```{r part_b}
-height_wages %$% 
-  lm(gwage33 ~ height33 + height16 + height07) %>% 
-  get_regression_table()
+```{r 5b}
+height_wages %>% 
+  lm(gwage_33 ~ height_33 + height_16 + height_07, .) %>% 
+  jtools::summ()
 ```
 
 ### (c)
 
-```{r part_c}
-height_wages %$% 
-  lm(gwage33 ~ height33 + height16 + height07) %>% 
-  vif()
+```{r 5c}
+height_wages %>% 
+  lm(gwage_33 ~ height_33 + height_16 + height_07, .) %>% 
+  jtools::summ(vifs = TRUE)
 ```
 
 ### (d)
 
-```{r part_d}
-height_wages %$% 
-  lm(gwage33 ~ height16 + momed + daded) %>% 
-  get_regression_table()
+```{r 5d}
+height_wages %>% 
+  lm(gwage_33 ~ height_16 + mom_ed + dad_ed, .) %>% 
+  jtools::summ()
 
-height_wages %$% 
-  lm(gwage33 ~ height33 + height16 + height07 + momed + daded) %>% 
-  tidy()
+height_wages %>% 
+  lm(gwage_33 ~ height_33 + height_16 + height_07 + mom_ed + dad_ed, .) %>% 
+  jtools::summ()
 ```
 
 ### (e)
 
-```{r part_e}
+```{r 5e}
 height_wages %$% 
-  lm(gwage33 ~ height16 + momed + daded + siblings) %>% 
-  get_regression_table()
+  lm(gwage_33 ~ height_16 + mom_ed + dad_ed + siblings) %>% 
+  jtools::summ()
 ```
 
 ### (f)
 
-```{r part_f}
-height_wages %$% 
-  lm(gwage33 ~ ht16noisy + momed + daded + siblings) %>% 
-  get_regression_table()
+```{r 5f}
+jtools::export_summs(
+  height_wages %>% 
+  lm(gwage_33 ~ ht_16_noisy + mom_ed + dad_ed + siblings, .),
+  
+  height_wages %>% 
+  lm(gwage_33 ~ height_16 + mom_ed + dad_ed + siblings, .)
+)
+
 ```
 

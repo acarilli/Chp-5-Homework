@@ -1,7 +1,7 @@
 ---
 title: "Exercise 3"
 author: "Carilli"
-date: '`r format(Sys.Date(), "%Y-%B-%d")`'
+date: '`r format(lubridate::today(), "%B %d, %Y")`'
 output: 
   html_document:
     theme: cerulean
@@ -11,54 +11,45 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, comment = NA, warning = FALSE, message = FALSE,
                       options(digits = 3, scipen = 999))
-require(tidyverse)
-require(readr)
-require(janitor)
-require(broom)
-require(magrittr)
-require(kableExtra)
-require(xtable)
-require(sjPlot)
-require(sjmisc)
-require(sjlabelled)
-require(car)
-require(moderndive)
+library(tidyverse)
 ```
 
-```{r data}
-cell <- read_csv("Cellphone_2012_homework.csv")
+```{r 3data}
+cell <- 
+  here::here("data", "Cellphone_2012_homework.csv") %>% 
+  read_csv()
 ```
 
 ### (a)
 
-```{r part_a}
-cell %$% 
-  lm(numberofdeaths ~ cell_subscription) %>% 
-  get_regression_table()
+```{r 3a}
+cell %>% 
+  lm(numberofdeaths ~ cell_subscription, .) %>% 
+  jtools::summ()
 ```
 
 ### (b)
 
-```{r part_b}
-cell %$% 
-  lm(numberofdeaths ~ cell_subscription + population) %>% 
-  get_regression_table()
+```{r 3b}
+cell %>% 
+  lm(numberofdeaths ~ cell_subscription + population, .) %>% 
+  jtools::summ()
 ```
 
 
 ### (c)
 
-```{r part_c}
-cell %$% 
-  lm(numberofdeaths ~ cell_subscription + population + total_miles_driven) %>% 
-  get_regression_table()
+```{r 3c}
+cell %>% 
+  lm(numberofdeaths ~ cell_subscription + population + total_miles_driven, .) %>% 
+  jtools::summ()
 ```
 
 ### (d)
 
-```{r part_d}
-cell %$% 
-  lm(numberofdeaths ~ cell_subscription + population + total_miles_driven) %>% 
-  vif()
+```{r 3d}
+cell %>% 
+  lm(numberofdeaths ~ cell_subscription + population + total_miles_driven, .) %>% 
+  jtools::summ(vifs = TRUE, digits = 4)
 ```
 

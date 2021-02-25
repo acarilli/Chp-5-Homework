@@ -1,7 +1,7 @@
 ---
 title: "Exercise 4"
 author: "Carilli"
-date: '`r format(Sys.Date(), "%Y-%B-%d")`'
+date: '`r format(lubridate::today(), "%B %d, %Y")`'
 output: 
   html_document:
     theme: cerulean
@@ -11,47 +11,39 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, comment = NA, warning = FALSE, message = FALSE,
                       options(digits = 3, scipen = 999))
-require(tidyverse)
-require(readr)
-require(janitor)
-require(broom)
-require(magrittr)
-require(kableExtra)
-require(xtable)
-require(sjPlot)
-require(sjmisc)
-require(sjlabelled)
-require(car)
-require(moderndive)
+library(tidyverse)
 ```
 
-```{r data}
-speed <- read_csv("speeding_tickets_text.csv") %>% 
-  clean_names()
+```{r 4data}
+speed <- 
+  here::here("data", "speeding_tickets_text.csv") %>% 
+  read_csv() %>% 
+  janitor::clean_names() %>% 
+  rename(mph_over = mp_hover)
 ```
 
 ### (a)
 
-```{r part_a}
-speed %$% 
-  lm(amount ~ age) %>% 
-  get_regression_table()
+```{r 4a}
+speed %>% 
+  lm(amount ~ age, .) %>% 
+  jtools::summ()
 ```
 
 ### (b)
 
-```{r part_b}
-speed %$% 
-  lm(amount ~ age + mp_hover) %>% 
-  get_regression_table()
+```{r 4b}
+speed %>% 
+  lm(amount ~ age + mph_over, .) %>% 
+  jtools::summ()
 ```
 
 ### (c)
 
-```{r part_c}
+```{r 4c}
 speed %>% 
-  top_n(1000) %$% 
-  lm(amount ~ age + mp_hover) %>% 
-  get_regression_table()
+  slice(1:1000) %>% 
+  lm(amount ~ age + mph_over, .) %>% 
+  jtools::summ()
 ```
 
